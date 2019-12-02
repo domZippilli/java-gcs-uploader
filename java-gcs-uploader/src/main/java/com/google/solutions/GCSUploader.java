@@ -25,6 +25,7 @@ import com.google.common.io.ByteStreams;
 public class GCSUploader {
     private static String bucketName = null;
     private static Storage storage = null;
+    private static int CHUNK_SIZE = 50 * 1000 * 1000;
 
     static {
         storage = StorageOptions.getDefaultInstance().getService();
@@ -32,14 +33,19 @@ public class GCSUploader {
 
     public static void main(String[] args) {
         // Quick-and-dirty argument parsing.
-        if (args.length != 2) {
-            System.out.println("Arguments: BUCKET_NAME LOCAL_FILE");
+        if (args.length < 2) {
+            System.out.println("Arguments: BUCKET_NAME LOCAL_FILE [CHUNK_SIZE_MB]");
             System.out.println("Local file path will be used for the object name in the bucket.");
             System.exit(1);
         }
         bucketName = args[0];
         String fileName = args[1];
         Path filePath = FileSystems.getDefault().getPath(fileName);
+        if (args.length >= 3) {
+            int newChunkSize = Integer.parseInt(args[2]) * 1000 * 1000;
+            System.out.println("Using user-specified chunk size.");
+            CHUNK_SIZE = newChunkSize;
+        }
 
         // Calculate file size pre-flight
         File testFile = new File(fileName);
@@ -48,6 +54,7 @@ public class GCSUploader {
 
         // Perform the upload.
         System.out.println("Starting upload of GB: " + gigabytes);
+        System.out.println("Chunk size is: " + CHUNK_SIZE);
         Instant start = Instant.now();
         doUpload(fileName, filePath);
         Instant finish = Instant.now();
@@ -66,7 +73,7 @@ public class GCSUploader {
     private static BlobId doUpload(String key, Path localFilePath) {
         BlobInfo blobInfo = createBlobInfo(key);
         WriteChannel writer = storage.writer(blobInfo);
-        writer.setChunkSize(50 * 1024 * 1024);
+        writer.setChunkSize(CHUNK_SIZE);
 
         try (OutputStream os = Channels.newOutputStream(writer);
                 InputStream is = Files.newInputStream(localFilePath)) {
