@@ -66,7 +66,7 @@ public class GCSUploader {
     private static BlobId doUpload(String key, Path localFilePath) {
         BlobInfo blobInfo = createBlobInfo(key);
         WriteChannel writer = storage.writer(blobInfo);
-        writer.setChunkSize(100 * 1024 * 1024);
+        writer.setChunkSize(50 * 1024 * 1024);
 
         try (OutputStream os = Channels.newOutputStream(writer);
                 InputStream is = Files.newInputStream(localFilePath)) {
