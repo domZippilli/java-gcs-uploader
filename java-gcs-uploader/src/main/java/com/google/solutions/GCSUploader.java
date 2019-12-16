@@ -33,7 +33,7 @@ public class GCSUploader {
     private static String bucketName = null;
     private static Storage storage = null;
     private static int CHUNK_SIZE = 15 * 1000 * 1000;
-    private static int SLICED_THRESHOLD = CHUNK_SIZE * 4;
+    private static long SLICED_THRESHOLD = CHUNK_SIZE * 4;
     private static int MAX_SLICES = 8;
     private static int THREADS = Runtime.getRuntime().availableProcessors() * 2;
     // recommend making this static as having more than one would make tuning difficult, likely too many threads.
@@ -113,7 +113,7 @@ public class GCSUploader {
 
     private static BlobId doCompositeUpload(File inputFile, BlobInfo compositeBlob) {
         // first decide how many slices to upload, maxing out at 8
-        int minimumSliceBytes = SLICED_THRESHOLD;
+        long minimumSliceBytes = SLICED_THRESHOLD;
         int sliceCount = (int) Math.min(MAX_SLICES, Math.ceil(inputFile.length() / minimumSliceBytes));
         int sliceBytes = (int) inputFile.length() / sliceCount;
         LinkedList<BlobInfo> slices = new LinkedList<BlobInfo>();
