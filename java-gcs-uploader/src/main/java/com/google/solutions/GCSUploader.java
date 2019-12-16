@@ -25,7 +25,7 @@ import com.google.common.io.ByteStreams;
 public class GCSUploader {
     private static String bucketName = null;
     private static Storage storage = null;
-    private static int CHUNK_SIZE = 50 * 1000 * 1000;
+    private static int CHUNK_SIZE = 15 * 1000 * 1000;
 
     static {
         storage = StorageOptions.getDefaultInstance().getService();
