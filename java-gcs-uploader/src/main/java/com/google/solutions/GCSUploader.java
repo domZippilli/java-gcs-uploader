@@ -34,9 +34,10 @@ public class GCSUploader {
     private static Storage storage = null;
     private static int CHUNK_SIZE = 15 * 1000 * 1000;
     private static long SLICED_THRESHOLD = CHUNK_SIZE * 4;
-    private static int MAX_SLICES = 8;
+    private static int MAX_SLICES = 10;
     private static int THREADS = Runtime.getRuntime().availableProcessors() * 2;
-    // recommend making this static as having more than one would make tuning difficult, likely too many threads.
+    // recommend making this static as having more than one would make tuning
+    // difficult, likely too many threads.
     private static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(THREADS);
 
     static {
@@ -73,7 +74,6 @@ public class GCSUploader {
 
         // no new tasks
         executor.shutdown();
-
 
         // Compute and report statistics.
         Duration duration = Duration.between(start, finish);
@@ -185,8 +185,8 @@ public class GCSUploader {
 
         @Override
         public void run() {
-            System.out.println(inputPath.getFileName() + ": Uploading slice bytes " + this.start + " to "
-                    + (this.limit > -1 ? this.start + this.limit : "end."));
+            System.out.println(inputPath.getFileName() + ": Uploading slice bytes " + this.start + "->"
+                    + (this.limit > -1 ? this.start + this.limit - 1 : "end") + " to " + chunkBlob.getName() + ".");
             try (WriteChannel writer = storage.writer(chunkBlob);
                     InputStream is = Files.newInputStream(inputPath);
                     OutputStream os = Channels.newOutputStream(writer);) {
@@ -194,13 +194,11 @@ public class GCSUploader {
                 // skip to chunk start
                 ByteStreams.skipFully(is, this.start);
                 // limit to chunk end, unless -1
-                InputStream slice = is;
                 if (limit > -1) {
-                    slice = ByteStreams.limit(is, limit);
+                    ByteStreams.copy(ByteStreams.limit(is, limit), os);
+                } else {
+                    ByteStreams.copy(is, os);
                 }
-                // copy chunk
-                ByteStreams.copy(slice, os);
-                slice.close();
             } catch (IOException e) {
                 throw new RuntimeException("Error while copying " + this.inputPath.getFileName());
             }
