@@ -133,7 +133,7 @@ public class GCSUploader {
             // limit to chunk end, unless final slice
             int limit = -1;
             if (idx < sliceCount - 1) {
-                limit = sliceBytes - 1;
+                limit = sliceBytes;
             }
 
             // submit async slice upload
