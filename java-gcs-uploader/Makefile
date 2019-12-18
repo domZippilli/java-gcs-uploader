@@ -6,4 +6,4 @@ compile:
 	chmod 775 target/gcsuploader.jar 
 
 blob:
-	dd if=/dev/urandom of=../sampleblob bs=64M count=32
+	dd if=/dev/urandom of=../sampledata/sampleblob bs=64M count=32

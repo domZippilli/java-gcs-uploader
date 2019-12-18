@@ -27,5 +27,5 @@ log/
 target/
 
 # repo-specific
-sampleblob
+sampledata
 .vscode
