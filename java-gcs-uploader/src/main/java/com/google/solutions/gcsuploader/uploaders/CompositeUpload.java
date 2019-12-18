@@ -58,7 +58,7 @@ public class CompositeUpload implements Uploader {
     }
 
     private void print(String message) {
-        System.out.println(this.fileName + "" + message);
+        System.out.println(this.fileName + ": " + message);
     }
 
     public void run() {
@@ -70,7 +70,7 @@ public class CompositeUpload implements Uploader {
         int sliceBytes = (int) inputFile.length() / sliceCount;
         LinkedList<BlobInfo> slices = new LinkedList<BlobInfo>();
         int idx = 0;
-        Path inputPath = FileSystems.getDefault().getPath(inputFile.getName());
+        Path inputPath = FileSystems.getDefault().getPath(inputFile.getPath());
 
         // save results
         LinkedList<Future<?>> results = new LinkedList<Future<?>>();
@@ -78,7 +78,7 @@ public class CompositeUpload implements Uploader {
         print("Slicing for composite upload.");
         while (idx < sliceCount) {
             // create and store the chunk for later composition
-            BlobInfo chunkBlob = createBlobInfo(inputFile.getName() + "_chunk_" + idx);
+            BlobInfo chunkBlob = createBlobInfo(inputFile.toString() + "_chunk_" + idx);
             slices.add(chunkBlob);
 
             int start = idx * sliceBytes;
@@ -99,7 +99,7 @@ public class CompositeUpload implements Uploader {
             try {
                 result.get();
             } catch (InterruptedException | ExecutionException e) {
-                System.err.println("Error writing chunk.");
+                System.err.println("Error writing slice of " + this.fileName);
                 e.printStackTrace();
             }
         }
@@ -141,7 +141,7 @@ public class CompositeUpload implements Uploader {
 
         @Override
         public void run() {
-            System.out.println(inputPath.getFileName() + "Uploading slice bytes " + this.start + "->"
+            System.out.println(inputPath.toString() + ": Uploading slice bytes " + this.start + "->"
                     + (this.limit > -1 ? this.start + this.limit - 1 : "end") + " to " + chunkBlob.getName() + ".");
             try (WriteChannel writer = storage.writer(chunkBlob);
                     InputStream is = Files.newInputStream(inputPath);
@@ -156,7 +156,8 @@ public class CompositeUpload implements Uploader {
                     ByteStreams.copy(is, os);
                 }
             } catch (IOException e) {
-                throw new RuntimeException("Error while copying " + this.inputPath.getFileName());
+                e.printStackTrace();
+                throw new RuntimeException("Error while uploading slice " + chunkBlob.getName());
             }
         }
     }

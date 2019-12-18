@@ -35,7 +35,6 @@ public class UploadNanny implements Runnable {
 
         // Perform the upload.
         print("Starting upload of GB: " + gigabytes);
-        print("Chunk size is: " + Constants.CHUNK_SIZE);
         Instant start = Instant.now();
         while (!doUpload()) {
             print("Upload error! Waiting and retrying.");

@@ -1,5 +1,8 @@
 package com.google.solutions.gcsuploader;
 
+import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -52,9 +55,22 @@ public class GCSUploader {
             System.exit(1);
         }
 
+        print("Starting all uploads.");
+        print("Chunk size is: " + Constants.CHUNK_SIZE);
+        print("Simultaneous files (core count) is: " + Constants.SIMULTANEOUS_FILES);
+        print("Upload threads is: " + Constants.UPLOAD_THREADS);
+        Instant start = Instant.now();
+
         LinkedList<Future<?>> results = new LinkedList<Future<?>>();
+        long bytes = 0;
 
         for (String file : files) {
+            File toUpload = new File(file);
+            if (!toUpload.exists()){
+                print("Bad file, skipping: " + toUpload);
+                continue;
+            }
+            bytes += toUpload.length();
             UploadNanny nannyWork = new UploadNanny(bucket, file);
             results.add(executor.submit(nannyWork));
         }
@@ -71,8 +87,24 @@ public class GCSUploader {
             }
         }
 
+        Instant finish = Instant.now();
+        print("Completed upload.");
+
+        // Compute and report statistics.
+        Duration duration = Duration.between(start, finish);
+        print("Elapsed time " + duration.toString());
+        float bytesPerSecond = bytes / duration.getSeconds();
+        float megabytesPerSecond = bytesPerSecond / 1000 / 1000;
+        print("Effective MB/s: " + megabytesPerSecond);
+        float megabitsPerSecond = (bytesPerSecond * 8) / 1000 / 1000;
+        print("Average Mb/s: " + megabitsPerSecond);
+
         // no new work for the nannies
         UploadNanny.shutdown();
 
+    }
+
+    private static void print(String message){
+        System.out.println("main: " + message);
     }
 }
